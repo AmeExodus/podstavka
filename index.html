@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Подставка">
+<meta name="theme-color" content="#0b1020">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Подставка</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:#141a2b; --card2:#1a2135; --line:rgba(255,255,255,.08);
+    --text:#eef2f8; --muted:#9aa4b8; --violet:#7b4dff; --violet2:#9a6bff;
+    --green:#31e06b; --red:#ff4d5e; --blue:#3f8cff; --white:#dfe6ee; --off:#5b6476; --orange:#ff9a3d; --cyan:#33c4ff;
+    --ring:var(--green);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;background:#060912;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  .app{max-width:430px;min-height:100vh;margin:0 auto;background:radial-gradient(120% 60% at 50% 0%,#141c36 0%,var(--bg) 60%);position:relative;padding:calc(18px + env(safe-area-inset-top)) 18px calc(104px + env(safe-area-inset-bottom))}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .sub{color:var(--muted);font-size:14px;margin-top:2px}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;margin:6px 0 18px}
+  .status{font-size:15px;font-weight:600;color:var(--green);display:flex;align-items:center;gap:6px;margin-top:8px}
+  .status i{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+  .status.local{color:var(--muted)}
+  .card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:20px;padding:16px}
+  .view{display:none}.view.on{display:block}
+
+  /* ring */
+  .ringwrap{display:flex;justify-content:center;margin:8px 0 22px}
+  .ring{width:220px;height:220px;border-radius:50%;border:12px solid var(--ring);display:flex;flex-direction:column;align-items:center;justify-content:center;
+        box-shadow:0 0 24px var(--ring),inset 0 0 24px color-mix(in srgb,var(--ring) 45%,transparent);transition:border-color .4s,box-shadow .4s}
+  .ring b{font-size:54px;font-weight:800;letter-spacing:-1px}
+  .ring span{font-size:20px;font-weight:700;color:var(--ring);margin-top:2px;transition:color .4s}
+
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tile{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line)}
+  .ico{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none}
+  .ico svg{width:24px;height:24px}
+  .tile small{display:block;color:var(--muted);font-size:13px}
+  .tile strong{font-size:19px;font-weight:700;white-space:nowrap}
+
+  .demo{margin-top:14px}
+  .demo-h{display:flex;justify-content:space-between;align-items:baseline}
+  .demo-h b{font-size:18px}.demo-h small{color:var(--muted);font-size:14px}
+  .dots{display:flex;align-items:center;margin:16px 4px}
+  .dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:#8a91a3;color:#202636;flex:none;transition:.3s}
+  .dot.done{background:var(--green);color:#0b1020}
+  .dot.cur{background:var(--green);color:#0b1020;box-shadow:0 0 14px var(--green);transform:scale(1.12)}
+  .bar{flex:1;height:3px;background:#3a4256}.bar.done{background:var(--green)}
+  .bell{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:16px;background:#1d3a2a;border:1px solid rgba(49,224,107,.18);font-size:16px;min-height:62px}
+  .bell svg{width:24px;height:24px;flex:none}
+  .bell.alert{background:#4a1c25;border-color:rgba(255,77,94,.3)}
+  .btn{width:100%;margin-top:12px;height:56px;border-radius:18px;background:linear-gradient(90deg,var(--violet),var(--violet2));font-size:19px;font-weight:700;box-shadow:0 6px 24px rgba(123,77,255,.35)}
+  .link{display:block;margin:10px auto 0;color:var(--muted);font-size:14px;text-decoration:underline}
+
+  /* nav */
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(12,16,30,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line)}
+  .nav button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0;border-radius:16px;font-size:13px;color:#cfd6e4}
+  .nav button svg{width:24px;height:24px}
+  .nav button.on{background:linear-gradient(180deg,#5b3bd6,#3b2a8f);color:#fff;box-shadow:0 0 18px rgba(123,77,255,.45)}
+
+  /* mugs */
+  .mughero{text-align:center;padding:22px 16px}
+  .mughero h2{font-size:24px;margin-top:10px}
+  .mughero p{color:#cfd6e4;font-size:16px;margin-top:4px}
+  .prog-h{display:flex;justify-content:space-between;font-size:16px}
+  .prog{height:10px;border-radius:6px;background:#2b3247;margin:12px 0 4px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--green);border-radius:6px;transition:width .4s}
+  .check{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:15px;color:#cfd6e4}
+  .check svg{width:22px;height:22px;flex:none}
+  .sect{font-size:19px;font-weight:700;margin:20px 0 10px}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--card);border:1px solid var(--line);margin-bottom:10px}
+  .row.sel{border-color:var(--violet2);box-shadow:0 0 14px rgba(123,77,255,.3)}
+  .row .grow{flex:1}.row small{color:var(--muted)}
+  .add{width:100%;height:52px;border-radius:16px;background:var(--card);border:1px solid var(--line);font-size:17px;font-weight:600}
+
+  /* events */
+  .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:14px}
+  .seg button{flex:1;padding:9px 0;border-radius:10px;font-size:14px;color:var(--muted)}
+  .seg button.on{background:#2a2350;color:#fff}
+  select{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:15px}
+  .day{font-weight:700;font-size:17px;margin:4px 2px 10px}
+  .ev{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .ev .t{width:62px;flex:none;text-align:center;padding:12px 0;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:15px}
+  .ev .b{flex:1;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:15px}
+  .ev .b svg{width:22px;height:22px;flex:none}
+  .ev.alert .b{background:#4a1c25;border-color:rgba(255,77,94,.35)}
+  .empty{color:var(--muted);text-align:center;padding:24px 0;font-size:15px}
+  .hist{padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:8px}
+  .hist small{color:var(--muted);font-size:13px;display:block}
+  .hist b{font-size:20px}
+
+  /* settings */
+  .set{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .set:first-of-type{border-top:0}
+  .set .grow{flex:1}.set b{font-size:16px}.set small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  .step{display:flex;align-items:center;border:1px solid var(--violet2);border-radius:22px;overflow:hidden;box-shadow:0 0 12px rgba(123,77,255,.25);flex:none}
+  .step button{width:36px;height:38px;font-size:22px}
+  .step output{min-width:64px;text-align:center;font-weight:700;background:#1d2236;height:38px;line-height:38px}
+  .sw{width:56px;height:32px;border-radius:16px;background:#3a4256;position:relative;flex:none;transition:.25s}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.25s}
+  .sw.on{background:var(--green)}.sw.on::after{left:27px}
+  .gh{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-bottom:6px}
+
+  /* sheet + toast */
+  .shade{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:20}
+  .shade.on{display:flex}
+  .sheet{width:100%;max-width:430px;background:#151b2d;border-radius:24px 24px 0 0;padding:20px 18px 28px;border-top:1px solid var(--line)}
+  .sheet h3{font-size:20px;margin-bottom:6px}.sheet p{color:var(--muted);font-size:14px;margin-bottom:14px}
+  .sheet label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+  .sheet input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#0f1424;color:var(--text);font-size:16px}
+  .toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);width:calc(100% - 28px);max-width:400px;background:rgba(30,36,56,.97);border:1px solid var(--line);border-radius:18px;padding:12px 14px;display:flex;gap:12px;align-items:center;transition:transform .35s;z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .toast.on{transform:translate(-50%,0)}
+  .toast .ap{width:36px;height:36px;border-radius:10px;background:#18bcf2;display:grid;place-items:center;flex:none}
+  .toast small{color:var(--muted);font-size:12px;display:block}.toast b{font-size:15px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ================= ПОДСТАВКА ================= -->
+  <section class="view" id="v-stand">
+    <div class="top"><h1>Подставка</h1><div class="status" id="status"><i></i><span>Онлайн</span></div></div>
+    <div class="ringwrap"><div class="ring"><b id="ringBig">—</b><span id="ringLabel">Пусто</span></div></div>
+    <div class="tiles">
+      <div class="tile"><div class="ico" style="background:rgba(51,196,255,.12)"><svg viewBox="0 0 24 24" fill="none" stroke="#33c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l2 12H4z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg></div><div><small>Вес</small><strong id="tWeight">—</strong></div></div>
+      <div class="tile"><div class="ico" style="background:rgba(49,224,107,.12)"><svg viewBox="0 0 24 24" fill="none" stroke="#31e06b" stroke-width="2" stroke-linecap="round"><path d="M12 4v4"/><path d="M5 12c4-4 10-4 14 0"/><path d="M8 16c2.5-2 5.5-2 8 0"/><circle cx="12" cy="19" r="1"/></svg></div><div><small>Уровень ToF</small><strong id="tLevel">—</strong></div></div>
+      <div class="tile"><div class="ico" style="background:rgba(255,77,94,.12)"><svg viewBox="0 0 24 24" fill="none" stroke="#ff4d5e" stroke-width="2" stroke-linecap="round"><path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/></svg></div><div><small>ИК-медиана</small><strong id="tIr">—</strong></div></div>
+      <div class="tile"><div class="ico" style="background:rgba(49,224,107,.12)"><svg viewBox="0 0 24 24" fill="none" stroke="#31e06b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h2a2 2 0 0 1 0 4h-2"/></svg></div><div><small>Профиль</small><strong id="tProfile">—</strong></div></div>
+      <div class="tile"><div class="ico" style="background:rgba(255,154,61,.12)"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-7 2 1 3 3 3 5"/></svg></div><div><small>Нагрев</small><strong id="tHeat">—</strong></div></div>
+      <div class="tile"><div class="ico" style="background:rgba(123,77,255,.15)"><svg viewBox="0 0 24 24" fill="none" stroke="#9a6bff" stroke-width="2" stroke-linecap="round"><path d="M7 4h10l-1 16H8z"/><path d="M7.5 10h9"/></svg></div><div><small>Выпито за раз</small><strong id="tSip">—</strong></div></div>
+    </div>
+
+    <div class="card demo">
+      <div class="demo-h"><b>Демо · Сценарий 1</b><small id="stepNo">Шаг 1 из 8</small></div>
+      <div class="dots" id="dots"></div>
+      <div class="bell" id="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span id="bellText"></span></div>
+      <button class="btn" id="next">Далее ›</button>
+      <button class="link" id="reset">Начать сценарий заново</button>
+    </div>
+  </section>
+
+  <!-- ================= КРУЖКИ ================= -->
+  <section class="view" id="v-mugs">
+    <div class="top"><h1>Кружки</h1></div>
+    <div class="card mughero">
+      <svg width="170" height="130" viewBox="0 0 170 130" aria-hidden="true">
+        <defs><linearGradient id="mg" x1="0" x2="1"><stop offset="0" stop-color="#e9d9c6"/><stop offset=".55" stop-color="#f5ebdf"/><stop offset="1" stop-color="#cdb9a2"/></linearGradient></defs>
+        <path d="M128 42c26 0 26 44 0 44" fill="none" stroke="#e2d2bf" stroke-width="12"/>
+        <path d="M28 24h104v64a30 30 0 0 1-30 30H58a30 30 0 0 1-30-30z" fill="url(#mg)"/>
+        <ellipse cx="80" cy="24" rx="52" ry="10" fill="#7a3f1d"/><ellipse cx="80" cy="22" rx="46" ry="6" fill="#9a5426"/>
+        <g fill="#b8957a" opacity=".5"><circle cx="50" cy="60" r="1.4"/><circle cx="70" cy="80" r="1.2"/><circle cx="95" cy="55" r="1.3"/><circle cx="110" cy="90" r="1.1"/><circle cx="60" cy="100" r="1.2"/></g>
+        <g id="mugCheck"><circle cx="140" cy="108" r="18" fill="#31e06b"/><path d="M131 108l6 6 12-12" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+      </svg>
+      <h2 id="mugName">Новая кружка</h2>
+      <p id="mugSpec">Узнаю после 2–3 раз</p>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="prog-h"><span>Обучение (выпито за раз)</span><b id="learnTxt">0 из 3</b></div>
+      <div class="prog"><i id="learnBar" style="width:0%"></i></div>
+      <div class="check" id="c1"></div>
+      <div class="check" id="c2"></div>
+    </div>
+    <div class="sect">Сохранённые кружки</div>
+    <div id="mugList"></div>
+    <button class="add" id="addMug">＋ Добавить кружку</button>
+  </section>
+
+  <!-- ================= СОБЫТИЯ ================= -->
+  <section class="view" id="v-events">
+    <div class="top"><div><h1>События</h1><div class="sub">Журнал работы подставки</div></div>
+      <select id="filter" aria-label="Фильтр событий"><option value="all">Все события</option><option value="alert">Уведомления</option><option value="mug">Кружка</option><option value="heat">Нагрев</option></select></div>
+    <div class="seg"><button class="on" data-seg="log">Журнал</button><button data-seg="hist">История кружек</button></div>
+    <div id="logView">
+      <div class="card"><div class="day">Сегодня</div><div id="evList"></div></div>
+      <div class="card" style="margin-top:12px"><div class="day" style="margin:0">Вчера · 18 событий</div></div>
+    </div>
+    <div id="histView" style="display:none">
+      <div id="histList"></div>
+    </div>
+  </section>
+
+  <!-- ================= НАСТРОЙКИ ================= -->
+  <section class="view" id="v-prefs">
+    <div class="top"><div><h1>Настройки</h1><div class="sub">Параметры подставки</div></div></div>
+    <div class="card">
+      <div class="gh">🌡 Температура</div>
+      <div class="set"><div class="grow"><b>Порог «остыл»</b><small>Ниже — кольцо синее и уведомление</small></div><div class="step" data-k="cool"><button aria-label="меньше">−</button><output></output><button aria-label="больше">+</button></div></div>
+      <div class="set"><div class="grow"><b>Температура подогрева</b><small>Держать напиток, если поставили горячим</small></div><div class="step" data-k="target"><button aria-label="меньше">−</button><output></output><button aria-label="больше">+</button></div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="gh">⏳ Задержки</div>
+      <div class="set"><div class="grow"><b>Подтверждение «остыл»</b><small>Сколько держится ниже порога, чтобы не было ложной тревоги</small></div><div class="step" data-k="hold"><button aria-label="меньше">−</button><output></output><button aria-label="больше">+</button></div></div>
+      <div class="set"><div class="grow"><b>Ожидание после снятия</b><small>Не вернули кружку — сессия закрывается</small></div><div class="step" data-k="away"><button aria-label="меньше">−</button><output></output><button aria-label="больше">+</button></div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="set"><div class="grow"><b>Умный дом</b><small>Передавать события в Home Assistant по MQTT</small></div><button class="sw on" id="smart" aria-label="Умный дом"></button></div>
+    </div>
+    <button class="card row" id="wifi" style="width:100%;margin-top:12px;text-align:left;border-color:var(--violet2)"><span style="font-size:22px">📶</span><span class="grow"><b style="font-size:17px">Подключение</b><br><small id="wifiSub">Wi‑Fi не настроен</small></span><span style="font-size:22px">›</span></button>
+  </section>
+
+  <nav class="nav">
+    <button data-v="stand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="11" rx="5"/><path d="M8 13h8"/><path d="M12 10v3"/></svg>Подставка</button>
+    <button data-v="mugs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h2a2 2 0 0 1 0 4h-2"/></svg>Кружки</button>
+    <button data-v="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4"/><path d="M13 9l-3 5h4l-3 5"/></svg>События</button>
+    <button data-v="prefs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Настройки</button>
+  </nav>
+</div>
+
+<div class="shade" id="shade"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"><div class="ap"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 4l9 16H3z" fill="#fff"/></svg></div><div><small>Home Assistant · сейчас</small><b id="toastText"></b></div></div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const store={get(k,d){try{const v=localStorage.getItem('upsp_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('upsp_'+k,JSON.stringify(v))}catch(e){}}};
+
+  const S=Object.assign({cool:45,target:58,hold:30,away:10,smart:true,wifi:'',mqtt:''},store.get('settings',{}));
+  const LIM={cool:[35,55,1,'°C'],target:[40,60,1,'°C'],hold:[10,120,5,'с'],away:[1,30,1,'мин']};
+  const ICONS={
+    cup:'<svg viewBox="0 0 24 24" fill="none" stroke="#31e06b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h2a2 2 0 0 1 0 4h-2"/></svg>',
+    scan:'<svg viewBox="0 0 24 24" fill="none" stroke="#9a6bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M7 12l2 2 4-4"/></svg>',
+    heat:'<svg viewBox="0 0 24 24" fill="none" stroke="#ff9a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-7 2 1 3 3 3 5"/></svg>',
+    ring:'<svg viewBox="0 0 24 24" fill="none" stroke="#3f8cff" stroke-width="2.4"><circle cx="12" cy="12" r="7"/></svg>',
+    bell:'<svg viewBox="0 0 24 24" fill="none" stroke="#ff4d5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
+    play:'<svg viewBox="0 0 24 24" fill="none" stroke="#7dff3a" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M10 9l5 3-5 3z" fill="#7dff3a"/></svg>'
+  };
+
+  // ---- scenario 1 (device point of view) ----
+  const STEPS=()=>[
+    {time:'12:15',w:'590 г',lvl:'—',ir:'—',heat:'Выкл.',prof:'—',sip:'—',ring:'white',big:'590 г',lab:'Поставили',
+     bell:'Вес вырос на 590 г и 1 с держится ровно — что-то поставили',ev:[['cup','mug','Кружку поставили: +590 г']]},
+    {time:'12:15',w:'590 г',lvl:'75 мм',ir:'70 °C',heat:'Запрещён',prof:'Новая',sip:'—',ring:'red',big:'70 °C',lab:'Горячо',
+     bell:'Кружки нет в профилях. Пока не узнаю её вес — не грею',ev:[['scan','mug','Новая кружка: уровень 75 мм, 70 °C'],['heat','heat','Нагрев запрещён: кружка не узнана']]},
+    {time:'12:35',w:'590 г',lvl:'75 мм',ir:'58 °C',heat:'Запрещён',prof:'Новая',sip:'—',ring:'green',big:'58 °C',lab:'Норма',
+     bell:'ИК меряет 4 раза в секунду, беру медиану 10 замеров',ev:[]},
+    {time:'12:59',w:'590 г',lvl:'75 мм',ir:'44 °C',heat:'Запрещён',prof:'Новая',sip:'—',ring:'green',big:'44 °C',lab:'Проверяю…',
+     bell:`44 °C ниже порога ${S.cool} °C — жду ${S.hold} с подряд, чтобы не ошибиться`,ev:[]},
+    {time:'13:00',w:'590 г',lvl:'75 мм',ir:'44 °C',heat:'Запрещён',prof:'Новая',sip:'—',ring:'blue',big:'44 °C',lab:'Чай остыл',
+     bell:'Остывание подтвердилось — кольцо синее',ev:[['ring','alert','Кольцо: синее — остыл']]},
+    {time:'13:00',w:'590 г',lvl:'75 мм',ir:'44 °C',heat:'Запрещён',prof:'Новая',sip:'—',ring:'blue',big:'44 °C',lab:'Чай остыл',
+     bell:S.smart?'Чай остыл: 44 °C — ушло в Home Assistant':'Умный дом выключен — только кольцо',alert:true,toast:S.smart,
+     ev:[['bell','alert','Чай остыл: 44 °C']]},
+    {time:'13:02',w:'560 г',lvl:'68 мм',ir:'44 °C',heat:'Запрещён',prof:'Новая',sip:'30 мл',ring:'blue',big:'30 мл',lab:'Выпито за раз',
+     bell:'Кружку подняли и вернули на 30 г легче — выпито 30 мл',ev:[['cup','mug','Кружку подняли'],['cup','mug','Кружку вернули: выпито за раз 30 мл']]},
+    {time:'13:10',w:'500 г',lvl:'61 мм',ir:'43 °C',heat:`След. раз ${S.target} °C`,prof:'Студент',sip:'30 мл',ring:'green',big:'✓',lab:'Кружка узнана',
+     bell:'Знаю вес пустой кружки и сечение. В следующий раз узнаю сразу и буду греть',ev:[['scan','mug','Кружка распознана: 310 г · 41 см²']]}
+  ];
+
+  let step=store.get('step',0), events=store.get('events',null), seg='log';
+  const baseEvents=[['12:14','play','all','Подставка подключена']];
+  if(!events){events=baseEvents.slice()}
+  let mugs=store.get('mugs',[]);
+
+  const RINGC={white:'var(--white)',red:'var(--red)',green:'var(--green)',blue:'var(--blue)',off:'var(--off)'};
+
+  function renderStand(){
+    const st=STEPS()[step];
+    document.documentElement.style.setProperty('--ring',RINGC[st.ring]);
+    $('ringBig').textContent=st.big;$('ringLabel').textContent=st.lab;
+    $('tWeight').textContent=st.w;$('tLevel').textContent=st.lvl;$('tIr').textContent=st.ir;
+    $('tHeat').textContent=st.heat;$('tProfile').textContent=st.prof;$('tSip').textContent=st.sip;
+    $('stepNo').textContent=`Шаг ${step+1} из 8`;
+    $('bellText').textContent=st.bell;$('bell').classList.toggle('alert',!!st.alert);
+    const d=$('dots');d.innerHTML='';
+    for(let i=0;i<8;i++){
+      const c=document.createElement('div');c.className='dot'+(i<step?' done':i===step?' cur':'');
+      c.innerHTML=i<step?'✓':String(i+1);d.appendChild(c);
+      if(i<7){const b=document.createElement('div');b.className='bar'+(i<step?' done':'');d.appendChild(b)}
+    }
+    $('next').textContent=step===7?'Готово ✓':'Далее ›';
+    const s=$('status');s.classList.toggle('local',!S.smart);s.querySelector('span').textContent=S.smart?'Онлайн':'Локально';
+  }
+
+  function renderMugs(){
+    const learned=step>=7, k=step>=7?3:step>=6?1:0;
+    $('mugName').textContent=learned?'Кружка Студент':'Новая кружка';
+    $('mugSpec').textContent=learned?'310 г · 41 см²':step>=1?'Узнаю после 2–3 раз':'Поставьте кружку на подставку';
+    $('mugCheck').style.display=learned?'':'none';
+    $('learnTxt').textContent=`${k} из 3`;$('learnBar').style.width=(k/3*100)+'%';
+    const ok='<svg viewBox="0 0 24 24" fill="none" stroke="#31e06b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>';
+    const wait='<svg viewBox="0 0 24 24" fill="none" stroke="#5b6476" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>';
+    $('c1').innerHTML=(learned?ok:wait)+'Профиль сохранён';
+    $('c2').innerHTML=(learned?ok:wait)+(learned?'Узнаётся автоматически, подогрев разрешён':'Пока не узнана — подогрев запрещён');
+    const list=(learned?[{n:'Кружка Студент',s:'310 г · 41 см²'}]:[]).concat(mugs);
+    $('mugList').innerHTML=list.length?list.map((m,i)=>`<div class="row${i===0&&learned?' sel':''}"><span style="font-size:26px">☕</span><span class="grow"><b>${esc(m.n)}</b> <small>· ${esc(m.s)}</small></span><span>›</span></div>`).join(''):'<div class="empty">Пока ни одной. Пройдите демо до конца или добавьте кружку через «Тару».</div>';
+  }
+
+  function renderEvents(){
+    const f=$('filter').value;
+    const rows=events.filter(e=>f==='all'||e[2]===f).slice().reverse();
+    $('evList').innerHTML=rows.length?rows.map(e=>`<div class="ev${e[2]==='alert'&&e[1]==='bell'?' alert':''}"><div class="t">${e[0]}</div><div class="b">${ICONS[e[1]]}<span>${esc(e[3])}</span></div></div>`).join(''):'<div class="empty">Нет событий этого типа</div>';
+    const hist=[{a:'Кружка Студент · 08:40–09:05',b:'Выпито 280 мл'},{a:'Бумажный стакан · 12:10–12:35',b:'Выпито 340 мл · остыл'}];
+    if(step>=6) hist.unshift({a:`${step>=7?'Кружка Студент':'Новая кружка'} · 12:15–${STEPS()[step].time}`,b:'Выпито 30 мл · осталось ≈ 250 мл · остыл'});
+    $('histList').innerHTML=hist.map(h=>`<div class="hist"><small>${esc(h.a)}</small><b>${esc(h.b)}</b></div>`).join('');
+  }
+
+  function renderPrefs(){
+    document.querySelectorAll('.step').forEach(el=>{const k=el.dataset.k;el.querySelector('output').textContent=`${S[k]} ${LIM[k][3]}`});
+    $('smart').classList.toggle('on',S.smart);
+    $('wifiSub').textContent=S.wifi?`Wi‑Fi «${S.wifi}»${S.mqtt?' · MQTT '+S.mqtt:''}`:'Wi‑Fi не настроен';
+  }
+
+  function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+  function save(){store.set('step',step);store.set('events',events);store.set('settings',S);store.set('mugs',mugs)}
+  function renderAll(){renderStand();renderMugs();renderEvents();renderPrefs()}
+
+  function toast(t){$('toastText').textContent=t;$('toast').classList.add('on');setTimeout(()=>$('toast').classList.remove('on'),3200)}
+
+  $('next').onclick=()=>{
+    if(step===7) return;
+    step++;
+    const st=STEPS()[step];
+    st.ev.forEach(e=>events.push([st.time,e[0],e[1],e[2]]));
+    if(st.toast) toast('Чай остыл: 44 °C');
+    save();renderAll();
+  };
+  $('reset').onclick=()=>{
+    step=0;events=baseEvents.slice();
+    STEPS()[0].ev.forEach(e=>events.push([STEPS()[0].time,e[0],e[1],e[2]]));
+    save();renderAll();
+  };
+  if(events.length===1){STEPS()[0].ev.forEach(e=>events.push([STEPS()[0].time,e[0],e[1],e[2]]))}
+
+  // steppers
+  document.querySelectorAll('.step').forEach(el=>{
+    const k=el.dataset.k,[mn,mx,st]=LIM[k],[minus,plus]=el.querySelectorAll('button');
+    minus.onclick=()=>{S[k]=Math.max(mn,S[k]-st);save();renderAll()};
+    plus.onclick=()=>{S[k]=Math.min(mx,S[k]+st);save();renderAll()};
+  });
+  $('smart').onclick=()=>{S.smart=!S.smart;save();renderAll()};
+  $('filter').onchange=renderEvents;
+  document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{
+    seg=b.dataset.seg;document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x===b));
+    $('logView').style.display=seg==='log'?'':'none';$('histView').style.display=seg==='hist'?'':'none';$('filter').style.visibility=seg==='log'?'':'hidden';
+  });
+
+  // sheets
+  function sheet(html,onReady){$('sheet').innerHTML=html;$('shade').classList.add('on');onReady&&onReady()}
+  function close(){$('shade').classList.remove('on')}
+  $('shade').onclick=e=>{if(e.target.id==='shade')close()};
+  $('addMug').onclick=()=>sheet(`<h3>Новая кружка через «Тару»</h3><p>Поставьте пустую кружку на подставку и коснитесь «Тара»: подставка запомнит её вес. Сечение узнает после 2–3 раз.</p>
+    <form id="mf"><label for="mn">Название</label><input id="mn" maxlength="30" placeholder="Например, Бокал 700 мл" required>
+    <label for="mw">Вес пустой (покажет подставка)</label><input id="mw" type="number" min="5" max="1500" value="285">
+    <button class="btn" type="submit">Тара — сохранить</button></form><button class="link" id="mc">Отмена</button>`,()=>{
+      $('mc').onclick=close;
+      $('mf').onsubmit=e=>{e.preventDefault();const n=$('mn').value.trim()||'Кружка';const w=Math.max(5,Math.min(1500,+$('mw').value||0));
+        mugs.push({n,s:`${w} г · сечение — после 2–3 раз`});events.push(['сейчас','scan','mug',`Тара: «${n}», ${w} г`]);save();renderAll();close();};
+    });
+  $('wifi').onclick=()=>sheet(`<h3>Подключение</h3><p>Демо: данные хранятся только в этом браузере и никуда не отправляются.</p>
+    <form id="wf"><label for="ws">Сеть Wi‑Fi</label><input id="ws" value="${esc(S.wifi)}" placeholder="Название сети">
+    <label for="wm">MQTT-брокер (Home Assistant)</label><input id="wm" value="${esc(S.mqtt)}" placeholder="homeassistant.local">
+    <button class="btn" type="submit">Сохранить</button></form><button class="link" id="wc">Отмена</button>`,()=>{
+      $('wc').onclick=close;
+      $('wf').onsubmit=e=>{e.preventDefault();S.wifi=$('ws').value.trim();S.mqtt=$('wm').value.trim();save();renderAll();close();};
+    });
+
+  // tabs via hash
+  const VIEWS=['stand','mugs','events','prefs'];
+  function show(){const v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):'stand';
+    VIEWS.forEach(x=>$('v-'+x).classList.toggle('on',x===v));
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));window.scrollTo(0,0)}
+  document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{location.hash=b.dataset.v});
+  window.addEventListener('hashchange',show);
+  renderAll();show();
+  if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+})();
+</script>
+</body>
+</html>
